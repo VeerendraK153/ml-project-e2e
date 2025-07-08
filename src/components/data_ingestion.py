@@ -6,6 +6,7 @@ import pandas as pd
 
 from sklearn.model_selection import train_test_split
 from dataclasses import dataclass
+from src.components.data_preprocessing import DataPreprocessing, DataPreprocessingConfig
 
 @dataclass
 class DataIngestionConfig:
@@ -20,6 +21,10 @@ class DataIngestion:
     def initiate_data_ingestion(self):
         logging.info("Data Ingestion method starts")
         try:
+            if not os.path.exists('notebook/data/train.csv'):
+                logging.error("File not found: notebook/data/train.csv")
+                raise CustomException("Input file not found", sys)
+
             df = pd.read_csv('notebook/data/train.csv')
             logging.info("Dataset read as pandas DataFrame")
 
@@ -40,10 +45,14 @@ class DataIngestion:
                 self.ingestion_config.test_data_path,
             )
         except Exception as e:
-            raise CustomException(e, sys)
             logging.error("Error occurred during data ingestion")
+            raise CustomException(e, sys)
 
 if __name__=='__main__':
     obj = DataIngestion()
-    obj.initiate_data_ingestion()
-    logging.info("Data ingestion completed successfully")
+    train_path, test_path = obj.initiate_data_ingestion()
+    logging.info(f"Data ingestion completed successfully. Train path: {train_path}, Test path: {test_path}")
+    data_preprocessing_obj = DataPreprocessing()
+    X_train, X_test, y_train = data_preprocessing_obj.initiate_data_preprocessing(train_path, test_path)
+    print(X_train.shape, X_test.shape)
+
