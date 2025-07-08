@@ -79,6 +79,7 @@ class DataPreprocessing:
 
             logging.info("Separating features and target from train data")
             y_train = train_df['SalePrice']
+            y_test = test_df['SalePrice'] if 'SalePrice' in test_df.columns else None
             X_train = train_df.drop(columns=['Id', 'SalePrice'], axis=1)
             X_test = test_df.drop(columns=['Id'], axis=1)
 
@@ -98,7 +99,9 @@ class DataPreprocessing:
             )
 
             logging.info("Data preprocessing completed successfully")
-            return X_train_transformed, X_test_transformed, self.preprocessing_config.preprocessor_path
+            return (X_train_transformed, X_test_transformed,
+                    y_train, y_test,
+            self.preprocessing_config.preprocessor_path)
 
         except Exception as e:
             raise CustomException(e, sys)

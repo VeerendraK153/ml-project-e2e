@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from dataclasses import dataclass
 from src.components.data_preprocessing import DataPreprocessing, DataPreprocessingConfig
+from src.components.model_trainer import ModelTrainer
 
 @dataclass
 class DataIngestionConfig:
@@ -53,6 +54,12 @@ if __name__=='__main__':
     train_path, test_path = obj.initiate_data_ingestion()
     logging.info(f"Data ingestion completed successfully. Train path: {train_path}, Test path: {test_path}")
     data_preprocessing_obj = DataPreprocessing()
-    X_train, X_test, y_train = data_preprocessing_obj.initiate_data_preprocessing(train_path, test_path)
-    print(X_train.shape, X_test.shape)
+    X_train, X_test, y_train, y_test,preprocessor_path = data_preprocessing_obj.initiate_data_preprocessing(train_path, test_path)
+    print(X_train.shape, X_test.shape,preprocessor_path)
+
+    model_trainer_obj = ModelTrainer()
+    best_score=model_trainer_obj.initiate_model_trainer(X_train, y_train, X_test, y_test)
+    print(f"Best model score: {best_score}")
+
+
 
