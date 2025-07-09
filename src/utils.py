@@ -5,6 +5,8 @@ import optuna
 from sklearn.metrics import r2_score
 from sklearn.model_selection import cross_val_score, RandomizedSearchCV
 
+import pickle
+
 from src.exception import CustomException
 from src.logger import logging
 
@@ -51,3 +53,11 @@ def tune_with_optuna(model_name, model_class, param_space_func, X_train, y_train
     best_model = model_class(**study.best_params)
     best_model.fit(X_train, y_train)
     return best_model, study.best_value
+
+def load_object(file_path):
+    try:
+        with open(file_path, "rb") as file_obj:
+            return pickle.load(file_obj)
+
+    except Exception as e:
+        raise CustomException(e, sys)

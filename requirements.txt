@@ -8,4 +8,5 @@ xgboost
 optuna
 dill
 joblib
+flask
 #-e .
