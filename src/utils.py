@@ -1,42 +1,53 @@
-import os
 import sys
-import pandas as pd
 import dill
 import numpy as np
+import optuna
 from sklearn.metrics import r2_score
+from sklearn.model_selection import cross_val_score, RandomizedSearchCV
 
 from src.exception import CustomException
 from src.logger import logging
 
 def save_object(file_path: str, obj: object):
-    """
-    Saves an object to a file using dill.
-    
-    Parameters:
-    - file_path (str): The path where the object will be saved.
-    - obj (object): The object to be saved.
-    """
     try:
-        logging.info(f"Saving object to {file_path}")
         with open(file_path, 'wb') as file_obj:
             dill.dump(obj, file_obj)
-        logging.info("Object saved successfully")
+        logging.info(f"Object saved at: {file_path}")
     except Exception as e:
         raise CustomException(e, sys)
 
-
-def evaluate_model(X_train,X_test,y_train,y_test,models):
+def evaluate_model_cv(model, X_train, y_train, cv=5):
+    """Evaluate model using cross-validation mean R2 score."""
     try:
-        model_scores = {}
-        for model_name, model in models.items():
-            logging.info(f"Training model: {model_name}")
-            model.fit(X_train, y_train)
-            y_train_pred = model.predict(X_train)
-            y_test_pred = model.predict(X_test)
-            train_model_score = r2_score(y_train, y_train_pred)
-            test_model_score = r2_score(y_test, y_test_pred)
-            model_scores[model_name] = test_model_score
-            logging.info(f"{model_name} - Train R^2 Score: {train_model_score}, Test R^2 Score: {test_model_score}")
-        return model_scores
+        scores = cross_val_score(model, X_train, y_train, cv=cv, scoring='r2', n_jobs=-1)
+        mean_score = np.mean(scores)
+        return mean_score
     except Exception as e:
         raise CustomException(e, sys)
+
+def tune_with_random_search(model, param_distributions, X_train, y_train, cv=5, n_iter=20):
+    """RandomizedSearchCV tuning with CV score."""
+    try:
+        rs = RandomizedSearchCV(model, param_distributions=param_distributions, n_iter=n_iter, cv=cv, scoring='r2', n_jobs=-1, random_state=42)
+        rs.fit(X_train, y_train)
+        logging.info(f"Best params (RandomSearch): {rs.best_params_}")
+        return rs.best_estimator_
+    except Exception as e:
+        raise CustomException(e, sys)
+
+def tune_with_optuna(model_name, model_class, param_space_func, X_train, y_train, cv=5, n_trials=20):
+    """Optuna tuning with CV score."""
+    def objective(trial):
+        params = param_space_func(trial)
+        model = model_class(**params)
+        scores = cross_val_score(model, X_train, y_train, cv=cv, scoring='r2', n_jobs=-1)
+        return np.mean(scores)
+
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=n_trials)
+
+    logging.info(f"Best params (Optuna) for {model_name}: {study.best_params}")
+
+    best_model = model_class(**study.best_params)
+    best_model.fit(X_train, y_train)
+    return best_model, study.best_value
