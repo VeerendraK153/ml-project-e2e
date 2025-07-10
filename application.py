@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request
 from src.pipeline.predict_pipeline import PredictPipeline
 
-app = Flask(__name__)
+application = Flask(__name__)
 pipeline = PredictPipeline()
 
-@app.route('/', methods=['GET', 'POST'])
+@application.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         # Get all form data
@@ -32,4 +32,4 @@ def index():
         return render_template('index.html', prediction_text=None)
 
 if __name__ == '__main__':
-    app.run()
+    application.run()
